@@ -62,6 +62,7 @@ body {
   border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
+  align-items: center;
   flex-direction: column;
   box-sizing: border-box;
 }
@@ -108,4 +109,14 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+
+#mainSec {
+  padding: auto;
+  width: 100%;
+}
+
+table {
+  margin: auto;
 }
