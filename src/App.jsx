@@ -72,6 +72,56 @@ function App() {
     return newshape
   }
 
+  function newPiece(){
+    const keys = Object.keys(shapes)
+    let shape2 = shapes[keys[Math.floor(Math.random()*keys.length)]]
+    let color = Math.floor(Math.random()*6)+1
+    let newshape = Array.from({ length: shape2.length }, () => Array(shape2[0].length).fill(0));
+    for(let i = 0; i < shape2.length; i++){
+      for(let j =0; j< shape2[0].length;j++){
+        if(shape2[i][j]!=0)newshape[i][j] = color
+      }
+    }
+    setCurShape(newshape)
+    setX(0)
+    setY(4)
+  }
+
+  function clearRows(board){
+    let completed = []
+    let funkyvariable =0
+    const newBoard = board.map(row => [...row]);
+
+    for(let i =0; i<board.length; i++){
+      let fullrow = true;
+      for(let j =0; j<board[0].length;j++){
+        if(board[i][j]==0){fullrow=false;break}
+      }
+      fullrow? completed[i]=1: completed[i]=0
+    }
+    
+    
+    for(let i = newBoard.length - 1; i >= 0; i--){
+      let fullrow = true
+      for(let k = 0; k < newBoard[0].length; k++){
+        if(newBoard[i][k] == 0){ fullrow = false; break }
+      }
+      if(fullrow){
+        funkyvariable++
+        for(let j = i; j > 0; j--){
+          for(let k = 0; k < newBoard[0].length; k++){
+            newBoard[j][k] = newBoard[j-1][k]
+          }
+        }
+        for(let k = 0; k < newBoard[0].length; k++){
+          newBoard[0][k] = 0
+        }
+        i++
+      }
+    }
+  return funkyvariable > 0 ? newBoard : board
+  }
+
  function updateBoard(x,y,shape) {
   // kolizja ściany
     if(19<x+shape.length-1 || 9<y+shape[0].length-1)return board
@@ -89,18 +139,9 @@ function App() {
       if(x==20-shape.length){
         console.log("BANG")
         setStaticBoard(newBoard)
-        const keys = Object.keys(shapes)
-        let shape2 = shapes[keys[Math.floor(Math.random()*keys.length)]]
-        let color = Math.floor(Math.random()*6)+1
-        let newshape = Array.from({ length: shape2.length }, () => Array(shape2[0].length).fill(0));
-        for(let i = 0; i < shape2.length; i++){
-          for(let j =0; j< shape2[0].length;j++){
-            if(shape2[i][j]!=0)newshape[i][j] = color
-          }
-        }
-        setCurShape(newshape)
-        setX(0)
-        setY(4)
+        let cleared = clearRows(newBoard)
+        setStaticBoard(cleared)
+        newPiece()
         return newBoard
       }
       
@@ -155,23 +196,13 @@ function App() {
                 }
               }
             }
-            setStaticBoard(newStatic); 
+            let cleared = clearRows(newStatic)
+
+            setStaticBoard(cleared); 
 
             console.log("BANG")
             console.log(board)
-            
-            const keys = Object.keys(shapes)
-            let shape2 = shapes[keys[Math.floor(Math.random()*keys.length)]]
-            let color = Math.floor(Math.random()*6)+1
-            let newshape = Array.from({ length: shape2.length }, () => Array(shape2[0].length).fill(0));
-            for(let i = 0; i < shape2.length; i++){
-              for(let j =0; j< shape2[0].length;j++){
-                if(shape2[i][j]!=0)newshape[i][j] = color
-              }
-            }
-            setCurShape(newshape)
-            setX(0)
-            setY(4)
+            newPiece()
             return
           }
 
@@ -193,6 +224,8 @@ function App() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [x,y,curShape]);
+
+
 
   return (
     <>
