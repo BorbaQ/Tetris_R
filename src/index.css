@@ -115,6 +115,7 @@ code {
 #mainSec {
   padding: auto;
   width: 100%;
+  display: flex;
 }
 
 table {

@@ -1,14 +1,43 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
+
+function ScorePanel({ score, log }) {
+    const LABELS = { 1: 'single', 2: 'double', 3: 'triple', 4: 'tetris!' }
+    const CLASSES = { 1: 'single', 2: 'double', 3: 'triple', 4: 'tetris' }
+    const COLORS = { 1: '#888780', 2: '#1D9E75', 3: '#378ADD', 4: '#7F77DD' }
+    const SIZES =  { 1: 13, 2: 15, 3: 16, 4: 18 }
+
+    return (
+      <div style={{ width: 160, fontFamily: 'sans-serif', paddingTop: 8 }}>
+        <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>score</div>
+        <div style={{ fontSize: 52, fontWeight: 500, lineHeight: 1, letterSpacing: -2 }}>{score}</div>
+        <hr style={{ border: 'none', borderTop: '0.5px solid #ccc', margin: '12px 0' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {log.map(entry => (
+            <div key={entry.id} style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontSize: SIZES[entry.rows], fontWeight: entry.rows >= 3 ? 500 : 400, color: COLORS[entry.rows] }}>
+                {LABELS[entry.rows] ?? `${entry.rows} rows`}
+              </span>
+              <span style={{ fontSize: 12, color: '#aaa' }}>+{entry.pts}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
 function App() {
     const createBoard = () =>
       Array.from({ length: 20 }, () => Array(10).fill(0));
   const [board, setBoard] = useState(createBoard());
   const [staticBoard, setStaticBoard] = useState(createBoard());
+  const [gameOver, setGameOver] = useState(false)
+  const [score, setScore] = useState(0)
+  const [scoreLog, setScoreLog] = useState([])
+  const scoreIdRef = useRef(0)
   const COLORS = {
     0: "black",
     1: "cyan",
@@ -72,7 +101,7 @@ function App() {
     return newshape
   }
 
-  function newPiece(){
+  function newPiece(currentStatic){
     const keys = Object.keys(shapes)
     let shape2 = shapes[keys[Math.floor(Math.random()*keys.length)]]
     let color = Math.floor(Math.random()*6)+1
@@ -82,10 +111,30 @@ function App() {
         if(shape2[i][j]!=0)newshape[i][j] = color
       }
     }
+    for(let a = 0; a <currentStatic[0].length;a++){
+      for(let i = 0; i < newshape.length; i++){
+        for(let j = 0; j < newshape[0].length; j++){
+          if(newshape[i][j] != 0 && currentStatic[0][a] != 0){
+            setGameOver(true); return;
+          }
+        }
+      }
+    }
     setCurShape(newshape)
     setX(0)
     setY(4)
   }
+
+  const SCORE_TABLE = { 1: 100, 2: 300, 3: 500, 4: 800 }
+  const SCORE_LABELS = { 1: 'single', 2: 'double', 3: 'triple', 4: 'tetris!' }
+
+  function addScore(rows) {
+    const pts = SCORE_TABLE[rows] || rows * 100
+    setScore(prev => prev + pts)
+    setScoreLog(prev => [{ rows, pts, id: scoreIdRef.current++ }, ...prev].slice(0, 20))
+  }
+
+
 
   function clearRows(board){
     let completed = []
@@ -119,7 +168,14 @@ function App() {
         i++
       }
     }
-  return funkyvariable > 0 ? newBoard : board
+  return { board: funkyvariable > 0 ? newBoard : board, cleared: funkyvariable }
+  }
+
+  function loose() {
+    setGameOver(true)
+    setScore(0)
+    setScoreLog([])
+    addScore()
   }
 
  function updateBoard(x,y,shape) {
@@ -139,9 +195,17 @@ function App() {
       if(x==20-shape.length){
         console.log("BANG")
         setStaticBoard(newBoard)
-        let cleared = clearRows(newBoard)
+        const { board: cleared, cleared: rowsCleared } = clearRows(newBoard)
+        if (rowsCleared > 0) addScore(rowsCleared)
+        for(let i =0;i<cleared[0].length;i++){
+          if(cleared[0][i]!=0){
+            setGameOver(true)
+            console.log("ending")
+            break
+          }
+        }
         setStaticBoard(cleared)
-        newPiece()
+        newPiece(cleared)
         return newBoard
       }
       
@@ -149,18 +213,18 @@ function App() {
     });
   }
 
-  
-
     const [x,setX] = useState(0)
     const [y,setY] = useState(4)
     const [curShape, setCurShape] = useState(shapes["long"])
 
     useEffect(() => {
-    updateBoard(x,y,curShape);
+      if (gameOver) return;
+      updateBoard(x,y,curShape);
     }, [x,y,curShape]);
 
     useEffect(() => {
       const handleKeyPress = (e) => {
+        if (gameOver) return;
         const shapeWidth = curShape[0].length;
         const shapeHeight = curShape.length;
         let newX = x;
@@ -177,7 +241,11 @@ function App() {
           input =2
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
-          setCurShape(RotateMatrix(curShape))
+          const rotated = RotateMatrix(curShape)
+          const newWidth = rotated[0].length
+          const clampedY = Math.min(y, 9 - newWidth + 1)
+          setY(clampedY)
+          setCurShape(rotated)
         } else if (e.key === 'ArrowDown') {
           e.preventDefault();
           newX = x+1
@@ -196,13 +264,14 @@ function App() {
                 }
               }
             }
-            let cleared = clearRows(newStatic)
+            const { board: cleared, cleared: rowsCleared } = clearRows(newStatic)
+            if (rowsCleared > 0) addScore(rowsCleared)
 
             setStaticBoard(cleared); 
 
             console.log("BANG")
             console.log(board)
-            newPiece()
+            newPiece(cleared)
             return
           }
 
@@ -225,11 +294,51 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [x,y,curShape]);
 
+  
 
 
   return (
     <>
       <section id='mainSec'>
+      {gameOver && (
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0,
+          width: '100%', height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.75)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10,
+        }}>
+          <div style={{ fontSize: 64, fontWeight: 700, color: '#E24B4A', letterSpacing: -2, lineHeight: 1 }}>
+            GAME OVER
+          </div>
+          <div style={{ fontSize: 28, color: 'white', margin: '12px 0 24px' }}>
+            score: {score}
+          </div>
+          <button onClick={() => {
+            const newone = createBoard()
+            setBoard(newone)
+            setStaticBoard(newone)
+            setGameOver(false)
+            setScore(0)
+            setScoreLog([])
+            newPiece(newone)
+          }} style={{
+            fontSize: 18,
+            padding: '10px 32px',
+            background: 'transparent',
+            color: 'white',
+            border: '2px solid white',
+            borderRadius: 8,
+            cursor: 'pointer'
+          }}>
+            restart
+          </button>
+        </div>
+      )}
         <table>
           <tbody>
             {board.map((row, rowIndex) => (
@@ -249,6 +358,7 @@ function App() {
             ))}
           </tbody>
         </table>
+        <ScorePanel score={score} log={scoreLog} />
       </section>
     </>
   )
