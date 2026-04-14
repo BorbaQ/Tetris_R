@@ -5,10 +5,10 @@ import heroImg from './assets/hero.png'
 import './App.css'
 
 function ScorePanel({ score, log }) {
-    const LABELS = { 1: 'single', 2: 'double', 3: 'triple', 4: 'tetris!' }
-    const CLASSES = { 1: 'single', 2: 'double', 3: 'triple', 4: 'tetris' }
+    const LABELS = { 1: 'Single', 2: 'Double', 3: 'Triple', 4: 'Tetris!' }
+    const CLASSES = { 1: 'tetris', 2: 'tetris', 3: 'tetris', 4: 'tetris' }
     const COLORS = { 1: '#888780', 2: '#1D9E75', 3: '#378ADD', 4: '#7F77DD' }
-    const SIZES =  { 1: 13, 2: 15, 3: 16, 4: 18 }
+    const SIZES =  { 1: 10, 2: 20, 3: 27, 4: 35 }
 
     return (
       <div style={{ width: 160, fontFamily: 'sans-serif', paddingTop: 8 }}>
@@ -17,7 +17,8 @@ function ScorePanel({ score, log }) {
         <hr style={{ border: 'none', borderTop: '0.5px solid #ccc', margin: '12px 0' }} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {log.map(entry => (
-            <div key={entry.id} style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <div key={entry.id} style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}
+            className={entry.rows >= 4 ? "tetris" : ""}>
               <span style={{ fontSize: SIZES[entry.rows], fontWeight: entry.rows >= 3 ? 500 : 400, color: COLORS[entry.rows] }}>
                 {LABELS[entry.rows] ?? `${entry.rows} rows`}
               </span>
