@@ -292,7 +292,48 @@ function App() {
     
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [x,y,curShape]);
+    }, [x,y,curShape]);
+
+
+    useEffect(() => {
+      if (gameOver) return;
+
+      const interval = setInterval(() => {
+        const newX = x + 1;
+        let collision = false;
+
+        for (let i = 0; i < curShape.length; i++) {
+          for (let j = 0; j < curShape[0].length; j++) {
+            if (curShape[i][j] !== 0) {
+              if (newX + i > 19 || staticBoard[newX + i][y + j] !== 0) {
+                collision = true;
+                break;
+              }
+            }
+          }
+          if (collision) break;
+        }
+
+        if (collision) {
+          const newStatic = staticBoard.map(row => [...row]);
+          for (let i = 0; i < curShape.length; i++) {
+            for (let j = 0; j < curShape[0].length; j++) {
+              if (curShape[i][j] !== 0) {
+                newStatic[x + i][y + j] = curShape[i][j];
+              }
+            }
+          }
+          const { board: cleared, cleared: rowsCleared } = clearRows(newStatic);
+          if (rowsCleared > 0) addScore(rowsCleared);
+          setStaticBoard(cleared);
+          newPiece(cleared);
+        } else {
+          setX(newX);
+        }
+      }, 500);
+
+      return () => clearInterval(interval);
+    }, [x, y, curShape, staticBoard, gameOver]);
 
   
 
