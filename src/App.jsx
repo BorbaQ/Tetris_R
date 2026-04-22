@@ -4,6 +4,7 @@ import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 
+// Komponent od wyświetlania wyniku w prawym górnym rogu max 20 pozycji różne style dla różnych clearów
 function ScorePanel({ score, log }) {
     const LABELS = { 1: 'Single', 2: 'Double', 3: 'Triple', 4: 'Tetris!' }
     const CLASSES = { 1: 'tetris', 2: 'tetris', 3: 'tetris', 4: 'tetris' }
@@ -31,6 +32,7 @@ function ScorePanel({ score, log }) {
   }
 
 function App() {
+  // tworzenie pustej tablicy 2d 10 na 20
     const createBoard = () =>
       Array.from({ length: 20 }, () => Array(10).fill(0));
   const [board, setBoard] = useState(createBoard());
@@ -85,7 +87,7 @@ function App() {
       [1,0]
     ]
   }
-
+// Obrót matrycy o 90 stopni w prawo x=y y=n-x-1
   const RotateMatrix = (shape) =>{
     if(shape.length==shape[0].length){
       return shape
@@ -101,7 +103,7 @@ function App() {
 
     return newshape
   }
-
+// nowy kształt plus losowy kolor
   function newPiece(currentStatic){
     const keys = Object.keys(shapes)
     let shape2 = shapes[keys[Math.floor(Math.random()*keys.length)]]
@@ -128,7 +130,7 @@ function App() {
 
   const SCORE_TABLE = { 1: 100, 2: 300, 3: 500, 4: 800 }
   const SCORE_LABELS = { 1: 'single', 2: 'double', 3: 'triple', 4: 'tetris!' }
-
+// faktyczne dodawanie pozycji do licznika 
   function addScore(rows) {
     const pts = SCORE_TABLE[rows] || rows * 100
     setScore(prev => prev + pts)
@@ -136,7 +138,7 @@ function App() {
   }
 
 
-
+// czyszczenie tablicy po ustawieniu rządka
   function clearRows(board){
     let completed = []
     let funkyvariable =0
@@ -171,14 +173,14 @@ function App() {
     }
   return { board: funkyvariable > 0 ? newBoard : board, cleared: funkyvariable }
   }
-
+// reset gry na przegraną
   function loose() {
     setGameOver(true)
     setScore(0)
     setScoreLog([])
     addScore()
   }
-
+// aktualizacja tablicy po współ x y i obecnym kształcie sprawdza kolizje z ścianami bocznymi ale nie podłogą
  function updateBoard(x,y,shape) {
   // kolizja ściany
     if(19<x+shape.length-1 || 9<y+shape[0].length-1)return board
@@ -192,23 +194,23 @@ function App() {
           }
         }
       }
-      // kolizja podłoga
-      if(x==20-shape.length){
-        console.log("BANG")
-        setStaticBoard(newBoard)
-        const { board: cleared, cleared: rowsCleared } = clearRows(newBoard)
-        if (rowsCleared > 0) addScore(rowsCleared)
-        for(let i =0;i<cleared[0].length;i++){
-          if(cleared[0][i]!=0){
-            setGameOver(true)
-            console.log("ending")
-            break
-          }
-        }
-        setStaticBoard(cleared)
-        newPiece(cleared)
-        return newBoard
-      }
+      // // kolizja podłoga
+      // if(x==20-shape.length){
+      //   console.log("BANG")
+      //   setStaticBoard(newBoard)
+      //   const { board: cleared, cleared: rowsCleared } = clearRows(newBoard)
+      //   if (rowsCleared > 0) addScore(rowsCleared)
+      //   for(let i =0;i<cleared[0].length;i++){
+      //     if(cleared[0][i]!=0){
+      //       setGameOver(true)
+      //       console.log("ending")
+      //       break
+      //     }
+      //   }
+      //   setStaticBoard(cleared)
+      //   newPiece(cleared)
+      //   return newBoard
+      // }
       
       return newBoard;
     });
@@ -217,12 +219,12 @@ function App() {
     const [x,setX] = useState(0)
     const [y,setY] = useState(4)
     const [curShape, setCurShape] = useState(shapes["long"])
-
+// Hook aktualizujący gre przy zmianie kształtu lub współ kstzałtu
     useEffect(() => {
       if (gameOver) return;
       updateBoard(x,y,curShape);
     }, [x,y,curShape]);
-
+// system inputu plus kolizja z podłoga z ślizganiem
     useEffect(() => {
       const handleKeyPress = (e) => {
         if (gameOver) return;
@@ -231,15 +233,17 @@ function App() {
         let newX = x;
         let newY = y;
         let input = -1
-
+//  strzałka lewo
         if (e.key === 'ArrowLeft') {
           e.preventDefault();
           newY = y - 1;
           input=1
+//  strzałka prawo
         } else if (e.key === 'ArrowRight') {
           e.preventDefault();
           newY = y + 1;
           input =2
+//  strzałka góra
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
           const rotated = RotateMatrix(curShape)
@@ -247,6 +251,7 @@ function App() {
           const clampedY = Math.min(y, 9 - newWidth + 1)
           setY(clampedY)
           setCurShape(rotated)
+//  strzałka dół i wiadomo kolizja podłoga/statyczne elementy
         } else if (e.key === 'ArrowDown') {
           e.preventDefault();
           newX = x+1
@@ -295,14 +300,14 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyPress);
     }, [x,y,curShape]);
 
-
+// "gravitacja" ściąganie kostki w dół
     useEffect(() => {
       if (gameOver) return;
 
       const interval = setInterval(() => {
         const newX = x + 1;
         let collision = false;
-
+// wykrywanie kolizji
         for (let i = 0; i < curShape.length; i++) {
           for (let j = 0; j < curShape[0].length; j++) {
             if (curShape[i][j] !== 0) {
@@ -314,7 +319,7 @@ function App() {
           }
           if (collision) break;
         }
-
+// aktualizacja statica kształtu itd przy kolizji
         if (collision) {
           const newStatic = staticBoard.map(row => [...row]);
           for (let i = 0; i < curShape.length; i++) {
@@ -342,6 +347,7 @@ function App() {
   return (
     <>
       <section id='mainSec'>
+        {/* game over wyświetlany przy przegranej */}
       {gameOver && (
         <div style={{
           position: 'absolute',
@@ -381,6 +387,7 @@ function App() {
           </button>
         </div>
       )}
+      {/* główna plansza */}
         <table>
           <tbody>
             {board.map((row, rowIndex) => (
@@ -400,6 +407,7 @@ function App() {
             ))}
           </tbody>
         </table>
+        {/* komponent tablicy punktów */}
         <ScorePanel score={score} log={scoreLog} />
       </section>
     </>
